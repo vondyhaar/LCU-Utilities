@@ -1,12 +1,11 @@
 import PySimpleGUI as sg
-import reveal
-import aram
+import utils.aram as aram, utils.reveal as reveal
 
 reveal_tab = [
     [sg.Text("Current team:", font=("System"), background_color="gray11", text_color="gray97")],
     [
         sg.Multiline(
-            "",
+            reveal.get_names(),
             disabled=True,
             no_scrollbar=True,
             key="-chat-",
@@ -24,9 +23,9 @@ reveal_tab = [
 
 aram_tab = [
     [sg.Text("State:", font=("System"), background_color="gray11", text_color="gray97")],
-    [        
+    [
         sg.Multiline(
-            "",
+            aram.get_jwt(),
             disabled=True,
             no_scrollbar=True,
             key="-state-",
@@ -36,8 +35,10 @@ aram_tab = [
             text_color="gray97",
         )
     ],
-    [sg.Button("Boost", enable_events=True, key="-boost-", font="System"),
-    sg.Button("Refresh JWT", enable_events=True, key="-jwt-", font="System")],
+    [
+        sg.Button("Boost", enable_events=True, key="-boost-", font="System"),
+        sg.Button("Refresh JWT", enable_events=True, key="-jwt-", font="System"),
+    ],
 ]
 
 layout = [
@@ -90,6 +91,6 @@ while True:
         case "-boost-":
             aram.boost()
         case "-jwt-":
-            aram.get_jwt()
+            window["-state-"].update(aram.get_jwt())
         case sg.WIN_CLOSED:
             break

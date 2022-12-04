@@ -1,14 +1,7 @@
-# reveal.py
+# utils/reveal.py
 
-from apis import *
+from .apis import *
 import webbrowser
-import logging
-
-logging.basicConfig(
-    filename="auto.log",
-    level=logging.INFO,
-    format='%(asctime)s::"%(message)s"',
-)
 
 
 class RevealNames:
@@ -44,7 +37,6 @@ class RevealNames:
         participants = self.get_names()
         if isinstance(participants, str) or len(participants) == 1:
             return
-        logging.info(str(participants))
         url = f"https://porofessor.gg/pregame/{self.lcu_api.region.lower()}/{','.join(participants)}"
         webbrowser.open(url)
 
