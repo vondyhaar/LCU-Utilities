@@ -1,6 +1,6 @@
 # utils/reveal.py
 
-from .apis import *
+from apis import *
 import webbrowser
 
 

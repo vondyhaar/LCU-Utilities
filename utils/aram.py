@@ -1,6 +1,6 @@
 # utils/aram.py
 
-from .apis import *
+from apis import *
 import json
 import datetime as dt
 
@@ -34,18 +34,15 @@ class AramBoost:
             with open("jwt.json", "w") as f:
                 json.dump(self.data, f, indent=4)
             return "Successfully got new JWT value"
-        else:
-            with open("jwt.json") as f:
-                data: dict = json.load(f)
-            user = data.get(str(self.summoner_id))
-            if user is None:
-                return "No JWT value for this user!"
-            if (dt.datetime.now() - dt.datetime.strptime(user.get("date"), "%H:%M:%S %d-%b-%Y")) > dt.timedelta(
-                days=1
-            ):
-                return "Previous JWT value is too old!"
-            self.jwt = user["latest_jwt"]
-            return "Successful fallback to previous JWT value"
+        with open("jwt.json") as f:
+            data: dict = json.load(f)
+        user = data.get(str(self.summoner_id))
+        if user is None:
+            return "No JWT value for this user!"
+        if (dt.datetime.now() - dt.datetime.strptime(user["date"], "%H:%M:%S %d-%b-%Y")) > dt.timedelta(days=1):
+            return "Previous JWT value is too old!"
+        self.jwt = user["latest_jwt"]
+        return "Successful fallback to previous JWT value"
 
     def boost(self) -> None:
         r = self.lcu_api.request("GET", "/lol-gameflow/v1/gameflow-phase").json()

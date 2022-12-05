@@ -1,5 +1,9 @@
+# main.py
+
+import sys
+sys.path.insert(0, '.\\utils')
 import PySimpleGUI as sg
-import utils.aram as aram, utils.reveal as reveal
+import aram, reveal
 
 reveal_tab = [
     [sg.Text("Current team:", font=("System"), background_color="gray11", text_color="gray97")],
@@ -16,8 +20,8 @@ reveal_tab = [
         )
     ],
     [
-        sg.Button("Porofessor", enable_events=True, key="-search-", font=("System")),
-        sg.Button("Dodge", enable_events=True, key="-dodge-", font=("System")),
+        sg.Button("Porofessor", enable_events=True, key="-search-", font="System"),
+        sg.Button("Dodge", enable_events=True, key="-dodge-", font="System"),
     ],
 ]
 
@@ -59,7 +63,7 @@ layout = [
     ]
 ]
 
-window = sg.Window("LCU Util", layout, background_color="gray11", button_color="gray8")
+window = sg.Window("LCU Utilities", layout, icon="utils\\eye.ico", titlebar_font="System", background_color="gray11", button_color="gray8")
 
 while True:
     event, values = window.read()
