@@ -12,3 +12,5 @@ Reveals and multisearches your team.
 Boosts your lobby for free.
 ### Refund
 Allows you to refund content anytime.
+### Rename
+Used to snipe names, works on new accounts.
