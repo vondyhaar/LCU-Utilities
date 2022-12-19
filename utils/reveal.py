@@ -5,8 +5,9 @@ import webbrowser
 
 
 class RevealNames:
-    lcu_api = LcuApi()
-    riot_api = RiotClientApi()
+    def __init__(self) -> None:
+        self.lcu_api = LcuApi()
+        self.riot_api = RiotClientApi()
 
     def match_phase(self, phase) -> bool:
         r = self.lcu_api.request("GET", "/lol-gameflow/v1/gameflow-phase")
@@ -26,7 +27,7 @@ class RevealNames:
     def get_names(self) -> str | list:
         r = self.riot_api.request("GET", "/chat/v5/participants/champ-select")
         if r.status_code != 200:
-            exit()
+            return "Error"
         r = r.json()
         participants = []
         for e in r["participants"]:
