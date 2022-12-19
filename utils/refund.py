@@ -32,7 +32,6 @@ class Refund:
         if r.status_code == 200:
             self.transactions.pop(key, None)
 
-
     def update_transactions(self) -> None:
         r = self.storefront_api.request("GET", "/storefront/v3/history/purchase")
         if r.status_code != 200:
@@ -41,7 +40,12 @@ class Refund:
 
         self.transactions = {}
         for e in r["transactions"]:
-            if e["refundable"] != True:
+            if "refundabilityMessage" in e and e["refundabilityMessage"] in [
+                "ALREADY_REFUNDED",
+                "OUT_OF_REFUND_TOKENS",
+                "NON_REFUNDABLE_INVENTORY_TYPE",
+                "FREE_OR_REWARDED_ITEM",
+            ]:
                 continue
             self.transactions.update({self.catalog.get(str(e["itemId"])): e})
 

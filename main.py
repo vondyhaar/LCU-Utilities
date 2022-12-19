@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, ".\\utils")
 
 import PySimpleGUI as sg
-import aram, reveal, refund
+import aram, reveal, refund, rename, misc
 
 reveal_tab = [
     [sg.Text("Current team:", font=("System"), background_color="gray11", text_color="gray97")],
@@ -79,6 +79,46 @@ refund_tab = [
     ],
 ]
 
+name = ""
+new = rename.get_new()
+rename_tab = [
+    [sg.Text("Info:", font=("System"), background_color="gray11", text_color="gray97")],
+    [
+        sg.Multiline(
+            "New account" if new else "",
+            disabled=True,
+            no_scrollbar=True,
+            key="-nameinfo-",
+            size=(20, 5),
+            font=("System", 17),
+            background_color="gray8",
+            text_color="gray97",
+        )
+    ],
+    [
+        sg.InputText(
+            "",
+            enable_events=True,
+            key="-name-",
+            font="System",
+            size=(17, 1),
+            text_color="gray97",
+            background_color="gray8",
+        ),
+        sg.Button("Check", enable_events=True, key="-check-", font="System"),
+        sg.Button("Change", enable_events=True, key="-change-", font="System", disabled=True),
+    ],
+]
+
+misc_tab = [
+    [sg.Button("Remove Tokens", enable_events=True, key="-removetokens-", font="System")],
+    [
+        sg.InputText("", key="-id-", size=(7, 1), font="System", text_color="gray97", background_color="gray8"),
+        sg.Button("Change background", enable_events=True, key="-changebg-", font="System"),
+    ],
+    [sg.Button("Cleaner", enable_events=True, key="-cleaner-", font="System")],
+]
+
 layout = [
     [
         sg.TabGroup(
@@ -86,6 +126,8 @@ layout = [
                 [sg.Tab("Reveal", reveal_tab, background_color="gray11")],
                 [sg.Tab("ARAM", aram_tab, background_color="gray11")],
                 [sg.Tab("Refund", refund_tab, background_color="gray11")],
+                [sg.Tab("Rename", rename_tab, background_color="gray11")],
+                [sg.Tab("Misc", misc_tab, background_color="gray11")],
             ],
             background_color="gray11",
             tab_background_color="gray11",
@@ -131,6 +173,7 @@ while True:
                     ],
                     modal=True,
                     background_color="gray11",
+                    icon="utils\\eye.ico",
                 ).read(close=True)
                 if event == "Yes":
                     reveal.dodge()
@@ -140,7 +183,12 @@ while True:
             window["-state-"].update(aram.get_jwt())
         case "-transactions-":
             info = transactions.get(values["-transactions-"])
-            info = "{}{}\n{}{}".format("WILL USE TOKEN!\n" if info["requiresToken"] else "", info["inventoryType"], info["amountSpent"], info["currencyType"])
+            info = "{}{}\n{}{}".format(
+                "WILL USE TOKEN!\n" if info["requiresToken"] else "",
+                info["inventoryType"],
+                info["amountSpent"],
+                info["currencyType"],
+            )
             window["-info-"].update(info)
             pass
         case "-refund-":
@@ -151,5 +199,46 @@ while True:
         case "-refresh-":
             refund.update_transactions()
             window["-transactions-"].update(values=list(refund.get_transactions().keys()))
+        case "-check-":
+            name = values["-name-"]
+            r = rename.check_name(name)
+            name_info = (
+                (f"{name} is available!" if r else f"{name} is either taken or unallowed!")
+                if 3 <= len(name) <= 16
+                else f"{name} is too long or too short."
+            )
+            window["-nameinfo-"].update(name_info)
+            window["-change-"].update(disabled=not r)
+        case "-change-":
+            event, v = sg.Window(
+                f"Confirm name change?",
+                [
+                    [
+                        sg.Stretch(background_color="gray11"),
+                        sg.Text(
+                            "Free of cost!" if new else "13900 BE Cost!", font="System", background_color="gray11"
+                        ),
+                        sg.Stretch(background_color="gray11"),
+                    ],
+                    [
+                        sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
+                        sg.Button("No", s=12, button_color=("gray97", "gray8"), font="System"),
+                    ],
+                ],
+                modal=True,
+                background_color="gray11",
+                icon="utils\\eye.ico",
+            ).read(close=True)
+            if event == "Yes":
+                r = rename.change_name(name)
+                window["-nameinfo-"].update(r)
+                break
+            pass
+        case "-removetokens-":
+            misc.remove_tokens()
+        case "-changebg-":
+            misc.change_background(values["-id-"])
+        case "-cleaner-":
+            pass
         case sg.WIN_CLOSED:
             break

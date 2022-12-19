@@ -1,6 +1,7 @@
 # utils/rename.py
 
 from apis import *
+from psutil import process_iter
 
 
 class Rename:
@@ -21,7 +22,10 @@ class Rename:
         if self.is_new:
             r = self.lcu_api.request("post", "/lol-summoner/v1/summoners", {"name": name})
             if r.status_code == 200:
-                return r.json()
+                for e in process_iter():
+                    if e.name() in ["LeagueClientUxRender", "LeagueClientUxRender.exe"]:
+                        e.kill()
+            return r.json()
 
         data = {
             "summonerName": name,
@@ -39,7 +43,11 @@ class Rename:
         r = self.storefront_api.request("post", "/storefront/v3/summonerNameChange/purchase", data)
         return r.json()
 
+    def get_new(self):
+        return self.is_new
+
 
 __instance = Rename()
 check_name = __instance.check_name
 change_name = __instance.change_name
+get_new = __instance.get_new
