@@ -47,7 +47,7 @@ aram_tab = [
     ],
 ]
 
-transactions = refund.get_transactions()
+transactions = {}
 refund_tab = [
     [sg.Text("Info:", font=("System"), background_color="gray11", text_color="gray97")],
     [
