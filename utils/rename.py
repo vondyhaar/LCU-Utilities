@@ -2,6 +2,7 @@
 
 from apis import *
 from psutil import process_iter
+import time
 
 
 class Rename:
@@ -15,9 +16,23 @@ class Rename:
     def check_name(self, name) -> bool:
         r = self.lcu_api.request("GET", f"/lol-summoner/v1/check-name-availability/{name}")
         if r.status_code != 200:
-            exit()
+            return False
         return r.json()
 
+    def snipe(self, name):
+        i = 0
+        t_0 = time.time()
+        try:
+            while not check_name(name):
+                i += 1
+                pass
+            change_name(name)
+        except:
+            print(i)
+            f = time.time() - t_0
+            print(f)
+            print((f"{(i/f)} r/s" if i/f > 1 else f"{f/i} s/r"))
+       
     def change_name(self, name) -> None:
         if self.is_new:
             r = self.lcu_api.request("post", "/lol-summoner/v1/summoners", {"name": name})
@@ -51,3 +66,4 @@ __instance = Rename()
 check_name = __instance.check_name
 change_name = __instance.change_name
 get_new = __instance.get_new
+snipe = __instance.snipe

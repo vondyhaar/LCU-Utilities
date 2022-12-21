@@ -107,6 +107,7 @@ rename_tab = [
         ),
         sg.Button("Check", enable_events=True, key="-check-", font="System"),
         sg.Button("Change", enable_events=True, key="-change-", font="System", disabled=True),
+        sg.Button("Snipe", enable_events=True, key="-snipe-", font="System"),
     ],
 ]
 
@@ -240,5 +241,7 @@ while True:
             misc.change_background(values["-id-"])
         case "-cleaner-":
             pass
+        case "-snipe-":
+            rename.snipe(values["-name-"])
         case sg.WIN_CLOSED:
             break
