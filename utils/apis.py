@@ -9,11 +9,16 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def get_args():
-    for e in psutil.process_iter():
+    proc_list = list(psutil.process_iter())
+    for e in proc_list:
         if e.name() in ["LeagueClientUx", "LeagueClientUx.exe"]:
             lcu_process = e
             break
     else:
+        for e in proc_list:
+            if e.name() in ["LeagueClient", "LeagueClient.exe"]:
+                e.kill()
+                break
         exit()
 
     process_args = {}

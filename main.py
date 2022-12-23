@@ -107,17 +107,25 @@ rename_tab = [
         ),
         sg.Button("Check", enable_events=True, key="-check-", font="System"),
         sg.Button("Change", enable_events=True, key="-change-", font="System", disabled=True),
-        sg.Button("Snipe", enable_events=True, key="-snipe-", font="System"),
+        sg.Button(
+            "Snipe",
+            enable_events=True,
+            key="-snipe-",
+            font="System",
+            tooltip="Interrupt manually with Ctrl+C on terminal",
+        ),
     ],
 ]
 
+ux = True
 misc_tab = [
     [sg.Button("Remove Tokens", enable_events=True, key="-removetokens-", font="System")],
     [
         sg.InputText("", key="-id-", size=(7, 1), font="System", text_color="gray97", background_color="gray8"),
         sg.Button("Change background", enable_events=True, key="-changebg-", font="System"),
     ],
-    [sg.Button("Cleaner", enable_events=True, key="-cleaner-", font="System")],
+    [sg.Button("Kill UX", enable_events=True, key="-ux-", font="System")],
+    [sg.Button("Cleaner", enable_events=True, key="-cleaner-", font="System", tooltip="Works only on Windows!")],
 ]
 
 layout = [
@@ -164,12 +172,12 @@ while True:
                     [
                         [
                             sg.Stretch(background_color="gray11"),
-                            sg.Text("Penalties still apply!", font=("System"), background_color="gray11"),
+                            sg.Text("Penalties still apply!", font="System", background_color="gray11"),
                             sg.Stretch(background_color="gray11"),
                         ],
                         [
-                            sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
                             sg.Button("No", s=12, button_color=("gray97", "gray8"), font="System"),
+                            sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
                         ],
                     ],
                     modal=True,
@@ -217,13 +225,15 @@ while True:
                     [
                         sg.Stretch(background_color="gray11"),
                         sg.Text(
-                            "Free of cost!" if new else "13900 BE Cost!", font="System", background_color="gray11"
+                            ("Free of cost!" if new else "13900 BE Cost!") + " Continue?",
+                            font="System",
+                            background_color="gray11",
                         ),
                         sg.Stretch(background_color="gray11"),
                     ],
                     [
-                        sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
                         sg.Button("No", s=12, button_color=("gray97", "gray8"), font="System"),
+                        sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
                     ],
                 ],
                 modal=True,
@@ -234,14 +244,47 @@ while True:
                 r = rename.change_name(name)
                 window["-nameinfo-"].update(r)
                 break
-            pass
         case "-removetokens-":
             misc.remove_tokens()
         case "-changebg-":
             misc.change_background(values["-id-"])
         case "-cleaner-":
-            pass
+            event, v = sg.Window(
+                f"Confirm cleaner",
+                [
+                    [
+                        sg.Stretch(background_color="gray11"),
+                        sg.Text(
+                            "This will close all League processes! Continue?", font="System", background_color="gray11"
+                        ),
+                        sg.Stretch(background_color="gray11"),
+                    ],
+                    [
+                        sg.Button("No", s=12, button_color=("gray97", "gray8"), font="System"),
+                        sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
+                    ],
+                ],
+                modal=True,
+                background_color="gray11",
+                icon="utils\\eye.ico",
+            ).read(close=True)
+            if event == "Yes":
+                misc.cleaner()
+                break
         case "-snipe-":
             rename.snipe(values["-name-"])
+        case "-ux-":
+            if ux:
+                misc.kill_ux()
+                ux = False
+                window["-ux-"].update("Restore UX")
+            else:
+                misc.restore_ux()
+                ux = True
+                window["-ux-"].update("Kill UX")
         case sg.WIN_CLOSED:
+            if not ux:
+                misc.kill_ux()
             break
+
+window.close()

@@ -23,14 +23,18 @@ class Rename:
         i = 0
         t_0 = time.time()
         try:
-            while not check_name(name):
+            r = False
+            while not r:
+                r = self.check_name(name)
+                print(r)
                 i += 1
+                print(i)
                 pass
-            change_name(name)
+            self.change_name(name)
         except:
             print(i)
             f = time.time() - t_0
-            print(f)
+            print(f"{f} s")
             print((f"{(i/f)} r/s" if i/f > 1 else f"{f/i} s/r"))
        
     def change_name(self, name) -> None:
