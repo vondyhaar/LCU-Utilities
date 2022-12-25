@@ -22,7 +22,12 @@ reveal_tab = [
         )
     ],
     [
-        sg.Button("Porofessor", enable_events=True, key="-search-", font="System"),
+        sg.ButtonMenu(
+            "Search",
+            [["OPGG", "Porofessor", "U.GG"], ["OPGG", "Porofessor", "U.GG"]],
+            key="-search-",
+            font="System",
+        ),
         sg.Button("Dodge", enable_events=True, key="-dodge-", font="System"),
     ],
 ]
@@ -163,7 +168,7 @@ while True:
     match event:
         case "-search-":
             participants = reveal.get_names()
-            reveal.search()
+            reveal.search(values["-search-"])
             window["-chat-"].update(participants)
         case "-dodge-":
             if reveal.match_phase("ChampSelect"):

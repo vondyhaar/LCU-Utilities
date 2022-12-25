@@ -34,11 +34,17 @@ class RevealNames:
             participants.append(e["name"])
         return participants if participants else "No players found!"
 
-    def search(self) -> None:
+    def search(self, option) -> None:
         participants = self.get_names()
         if isinstance(participants, str) or len(participants) == 1:
             return
-        url = f"https://porofessor.gg/pregame/{self.lcu_api.region.lower()}/{','.join(participants)}"
+        match option:
+            case "OPGG":
+                url = f"https://www.op.gg/multisearch/{self.lcu_api.region.lower()}?summoners={','.join(participants)}"
+            case "Porofessor":
+                url = f"https://porofessor.gg/pregame/{self.lcu_api.region.lower()}/{','.join(participants)}"
+            case "U.GG":
+                url = f"https://u.gg/multisearch?summoners={','.join(participants)}&region={self.lcu_api.region.lower()}"
         webbrowser.open(url)
 
 
