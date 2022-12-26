@@ -196,7 +196,8 @@ while True:
                 if event == "Yes":
                     reveal.dodge()
         case "-boost-":
-            aram.boost()
+            if aram.boost() is not None:
+                window["-state-"].update(aram.get_jwt())
         case "-jwt-":
             window["-state-"].update(aram.get_jwt())
         case "-transactions-":
