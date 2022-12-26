@@ -86,6 +86,7 @@ refund_tab = [
 
 name = ""
 new = rename.get_new()
+sniping = False
 rename_tab = [
     [sg.Text("Info:", font=("System"), background_color="gray11", text_color="gray97")],
     [
@@ -109,6 +110,8 @@ rename_tab = [
             size=(17, 1),
             text_color="gray97",
             background_color="gray8",
+            disabled_readonly_background_color="red",
+            use_readonly_for_disable=False,
         ),
         sg.Button("Check", enable_events=True, key="-check-", font="System"),
         sg.Button("Change", enable_events=True, key="-change-", font="System", disabled=True),
@@ -162,6 +165,7 @@ window = sg.Window(
     button_color="gray8",
     finalize=True,
 )
+window["-name-"].widget["disabledbackground"] = "gray8"
 
 while True:
     event, values = window.read()
@@ -277,7 +281,49 @@ while True:
                 misc.cleaner()
                 break
         case "-snipe-":
-            rename.snipe(values["-name-"])
+            name = values["-name-"]
+            r = rename.check_name(name)
+            if r:
+                event, v = sg.Window(
+                    f"Name already available",
+                    [
+                        [
+                            sg.Stretch(background_color="gray11"),
+                            sg.Text(
+                                ("Free of cost!" if new else "13900 BE Cost!") + " Continue?",
+                                font="System",
+                                background_color="gray11",
+                            ),
+                            sg.Stretch(background_color="gray11"),
+                        ],
+                        [
+                            sg.Button("No", s=12, button_color=("gray97", "gray8"), font="System"),
+                            sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
+                        ],
+                    ],
+                    modal=True,
+                    background_color="gray11",
+                    icon="utils\\eye.ico",
+                ).read(close=True)
+                if event == "Yes":
+                    r = rename.change_name(name)
+                    window["-nameinfo-"].update(r)
+                    break
+            else:
+                if not sniping:
+                    sniping = True
+                    rename.toggle_snipe()
+                    window[event].update("Stop")
+                    window["-nameinfo-"].update(f"Sniping {values['-name-']}")
+                    window.perform_long_operation(lambda: rename.snipe(values["-name-"]), "-sniped-")
+                else:
+                    sniping = False
+                    rename.toggle_snipe()
+                    window[event].update("Snipe")
+                window["-name-"].update(disabled=sniping)
+                window["-check-"].update(disabled=sniping)
+        case "-sniped-":
+            window["-nameinfo-"].update(values[event])
         case "-ux-":
             if ux:
                 misc.kill_ux()
