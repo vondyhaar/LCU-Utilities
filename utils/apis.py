@@ -33,14 +33,13 @@ process_args = get_args()
 
 
 class RiotClientApi:
+    port = process_args.get("riotclient-app-port")
+    auth = HTTPBasicAuth("riot", process_args.get("riotclient-auth-token"))
+
     def __new__(cls):
         if not hasattr(cls, "instance"):
             cls.instance = super(__class__, cls).__new__(cls)
         return cls.instance
-
-    def __init__(self) -> None:
-        self.port = process_args.get("riotclient-app-port")
-        self.auth = HTTPBasicAuth("riot", process_args.get("riotclient-auth-token"))
 
     def request(self, method, endpoint, json=None):
         return requests.request(
@@ -49,15 +48,14 @@ class RiotClientApi:
 
 
 class LcuApi:
+    region = process_args.get("region")
+    port = process_args.get("app-port")
+    auth = HTTPBasicAuth("riot", process_args.get("remoting-auth-token"))
+
     def __new__(cls):
         if not hasattr(cls, "instance"):
             cls.instance = super(__class__, cls).__new__(cls)
         return cls.instance
-
-    def __init__(self) -> None:
-        self.region = process_args.get("region")
-        self.port = process_args.get("app-port")
-        self.auth = HTTPBasicAuth("riot", process_args.get("remoting-auth-token"))
 
     def request(self, method, endpoint, json=None):
         return requests.request(
@@ -66,16 +64,14 @@ class LcuApi:
 
 
 class StorefrontApi:
+    lcu_api = LcuApi()
+    token = lcu_api.request("GET", "/lol-login/v1/session").json()["idToken"]
+    region = lcu_api.region
+
     def __new__(cls):
         if not hasattr(cls, "instance"):
             cls.instance = super(__class__, cls).__new__(cls)
         return cls.instance
-
-    def __init__(self) -> None:
-        lcu_api = LcuApi()
-        r = lcu_api.request("GET", "/lol-login/v1/session").json()
-        self.token = r["idToken"]
-        self.region = lcu_api.region
 
     def request(self, method, endpoint, json=None):
         return requests.request(
