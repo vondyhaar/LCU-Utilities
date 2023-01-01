@@ -24,12 +24,12 @@ class AramBoost:
         payload = base64.b64decode(payload).decode("ascii")
         payload = json.loads(payload)
         rp = payload["balances"]["RP"]
-        self.puuid = payload["sub"]
+        puuid = payload["sub"]
         if rp >= 95:
             self.exp = payload["exp"]
             self.data.update(
                 {
-                    self.puuid: {
+                    puuid: {
                         "jwt": self.jwt,
                         "exp": self.exp,
                     }
@@ -41,11 +41,11 @@ class AramBoost:
         else:
             with open("jwt.json") as f:
                 data: dict = json.load(f)
-            user = data.get(self.puuid)
+            user = data.get(puuid)
             if user is None:
                 return "No JWT value for this user!"
             if time.time() > user["exp"]:
-                return "Previous JWT value is too old!"
+                return "JWT value is too old!"
             self.jwt = user["jwt"]
             self.exp = user["exp"]
             return "Successful fallback to previous JWT value"

@@ -1,6 +1,7 @@
 # main.py
 
 import sys
+import webbrowser
 
 sys.path.insert(0, ".\\utils")
 
@@ -152,8 +153,20 @@ layout = [
             title_color="gray50",
             selected_title_color="gray97",
             selected_background_color="gray11",
-        )
-    ]
+        ),
+    ],
+    [
+        sg.Stretch(background_color="gray11"),
+        sg.Text(
+            "https://github.com/vondyhaar/LCU-Utilities",
+            enable_events=True,
+            key="-repo-",
+            font=("System", 12, "underline"),
+            text_color="gray97",
+            background_color="gray11",
+        ),
+        sg.Stretch(background_color="gray11"),
+    ],
 ]
 
 window = sg.Window(
@@ -166,6 +179,8 @@ window = sg.Window(
     finalize=True,
 )
 window["-name-"].widget["disabledbackground"] = "gray8"
+window.BringToFront()
+
 
 while True:
     event, values = window.read()
@@ -196,7 +211,9 @@ while True:
                 if event == "Yes":
                     reveal.dodge()
         case "-boost-":
-            if aram.boost() is not None:
+            r = aram.boost()
+            window["-state-"].update(r)
+            if r == "Expired":
                 window["-state-"].update(aram.get_jwt())
         case "-jwt-":
             window["-state-"].update(aram.get_jwt())
@@ -253,7 +270,6 @@ while True:
             if event == "Yes":
                 r = rename.change_name(name)
                 window["-nameinfo-"].update(r)
-                break
         case "-removetokens-":
             misc.remove_tokens()
         case "-changebg-":
@@ -309,7 +325,6 @@ while True:
                 if event == "Yes":
                     r = rename.change_name(name)
                     window["-nameinfo-"].update(r)
-                    break
             else:
                 if not sniping:
                     sniping = True
@@ -325,8 +340,11 @@ while True:
                 window["-check-"].update(disabled=sniping)
         case "-sniped-":
             window["-nameinfo-"].update(values[event])
+            window["-name-"].update(disabled=False)
+            window["-check-"].update(disabled=False)
+            window.BringToFront()
         case "-ux-":
-            if ux:
+            if ux: # /riotclient/ux-state ?
                 misc.kill_ux()
                 ux = False
                 window["-ux-"].update("Restore UX")
@@ -338,5 +356,7 @@ while True:
             if not ux:
                 misc.kill_ux()
             break
+        case "-repo-":
+            webbrowser.open("https://github.com/vondyhaar/LCU-Utilities")
 
 window.close()
