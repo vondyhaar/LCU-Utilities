@@ -23,14 +23,12 @@ class Refund:
 
         self.update_transactions()
 
-    def refund(self, key) -> None:
-        t = self.transactions.get(key)
-        if t is None:
-            return
-        json = {"accountId": self.account_id, "transactionId": t["transactionId"]}
-        r = self.storefront_api.request("POST", "/storefront/v3/refund", json)
-        if r.status_code == 200:
-            self.transactions.pop(key, None)
+    def refund(self, id):
+        body = {"accountId": self.account_id, "transactionId": id}
+        r = self.storefront_api.request("POST", "/storefront/v3/refund", body)
+        if r.status_code != 200:
+            return r.json()
+        return True
 
     def update_transactions(self) -> None:
         r = self.storefront_api.request("GET", "/storefront/v3/history/purchase")
@@ -39,21 +37,30 @@ class Refund:
         r = r.json()
 
         self.transactions = {}
+        print(r["transactions"])
         for e in r["transactions"]:
-            if "refundabilityMessage" in e and e["refundabilityMessage"] in [
-                "ALREADY_REFUNDED",
-                "OUT_OF_REFUND_TOKENS",
-                "NON_REFUNDABLE_INVENTORY_TYPE",
-                "FREE_OR_REWARDED_ITEM",
-            ]:
+            if (
+                e.get("refundabilityMessage")
+                in [
+                    "ALREADY_REFUNDED",
+                    "NON_REFUNDABLE_INVENTORY_TYPE",
+                    "FREE_OR_REWARDED_ITEM",
+                ]
+                or e.get("requiresToken") != False
+            ):
                 continue
+
             self.transactions.update({self.catalog.get(str(e["itemId"])): e})
 
     def get_transactions(self) -> dict:
         return self.transactions
+
+    def get_transaction(self, key) -> dict:
+        return self.transactions.get(key)
 
 
 __instance = Refund()
 refund = __instance.refund
 update_transactions = __instance.update_transactions
 get_transactions = __instance.get_transactions
+get_transaction = __instance.get_transaction

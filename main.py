@@ -1,6 +1,7 @@
 # main.py
 
 import sys
+import time
 import webbrowser
 
 sys.path.insert(0, ".\\utils")
@@ -53,7 +54,11 @@ aram_tab = [
     ],
 ]
 
-transactions = {}
+try:
+    transactions = refund.get_transactions()
+    f = list(transactions.keys())
+except:
+    transactions = {"RATELIMITED": "yep"}
 refund_tab = [
     [sg.Text("Info:", font=("System"), background_color="gray11", text_color="gray97")],
     [
@@ -70,7 +75,7 @@ refund_tab = [
     ],
     [
         sg.Combo(
-            list(transactions.keys()),
+            f,
             key="-transactions-",
             enable_events=True,
             readonly=True,
@@ -81,7 +86,13 @@ refund_tab = [
             button_arrow_color="gray97",
         ),
         sg.Button("Refund", enable_events=True, key="-refund-", font="System"),
-        sg.Button("Refresh", enable_events=True, key="-refresh-", font="System"),
+        sg.Button(
+            "Refresh",
+            enable_events=True,
+            key="-refresh-",
+            font="System",
+            tooltip="30 second disable to prevent rate limiting",
+        ),
     ],
 ]
 
@@ -217,24 +228,38 @@ while True:
                 window["-state-"].update(aram.get_jwt())
         case "-jwt-":
             window["-state-"].update(aram.get_jwt())
+
+        # Refund tab
         case "-transactions-":
-            info = transactions.get(values["-transactions-"])
-            info = "{}{}\n{}{}".format(
-                "WILL USE TOKEN!\n" if info["requiresToken"] else "",
-                info["inventoryType"],
-                info["amountSpent"],
-                info["currencyType"],
+            info = transactions.get(values[event])
+            info = "{}{}\n{} {}\n{}".format(
+                "WILL USE TOKEN!\n" if info.get("requiresToken") != False else "",
+                info.get("inventoryType"),
+                info.get("amountSpent"),
+                info.get("currencyType"),
+                info.get("datePurchased"),
             )
             window["-info-"].update(info)
             pass
         case "-refund-":
-            refund.refund(values["-transactions-"])
-            names = list(refund.get_transactions().keys())
-            window["-transactions-"].update(values=names)
-            window["-info-"].update("")
+            t = refund.get_transaction(values["-transactions-"])
+            r = refund.refund(t.get("transactionId"))
+            if r == True:
+                transactions.pop(values["-transactions-"])
+                window["-transactions-"].update(values=list(transactions.keys()))
+                window["-info-"].update("REFUNDED")
+            else:
+                window["-info-"].update(f"ERROR\n{r}")
         case "-refresh-":
+            window[event].update(disabled=True)
             refund.update_transactions()
-            window["-transactions-"].update(values=list(refund.get_transactions().keys()))
+            transactions = refund.get_transactions()
+            window["-transactions-"].update(values=list(transactions.keys()))
+            window.perform_long_operation(lambda: time.sleep(30), "-unfreeze-")
+        case "-unfreeze-":
+            window["-refresh-"].update(disabled=False)
+
+        # Rename tab
         case "-check-":
             name = values["-name-"]
             r = rename.check_name(name)
@@ -330,8 +355,8 @@ while True:
                     sniping = True
                     rename.toggle_snipe()
                     window[event].update("Stop")
-                    window["-nameinfo-"].update(f"Sniping {values['-name-']}")
-                    window.perform_long_operation(lambda: rename.snipe(values["-name-"]), "-sniped-")
+                    window["-nameinfo-"].update(f"Sniping {name}")
+                    window.perform_long_operation(lambda: rename.snipe(name), "-sniped-")
                 else:
                     sniping = False
                     rename.toggle_snipe()
@@ -344,7 +369,7 @@ while True:
             window["-check-"].update(disabled=False)
             window.BringToFront()
         case "-ux-":
-            if ux: # /riotclient/ux-state ?
+            if ux:  # /riotclient/ux-state ?
                 misc.kill_ux()
                 ux = False
                 window["-ux-"].update("Restore UX")
@@ -358,5 +383,7 @@ while True:
             break
         case "-repo-":
             webbrowser.open("https://github.com/vondyhaar/LCU-Utilities")
+        case _:
+            pass
 
 window.close()
