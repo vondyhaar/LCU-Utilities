@@ -8,6 +8,9 @@ import shutil
 
 lcu_api = LcuApi()
 
+def invis_banner():
+    r = lcu_api.request("POST", "/lol-challenges/v1/update-player-preferences/", {"bannerAccent": "2"})
+    print(r.status_code)
 
 def restore_ux() -> None | str:
     r = lcu_api.request("POST", "/riotclient/launch-ux")
@@ -44,12 +47,7 @@ def cleaner():  # https://github.com/notfeels/lol_cleaner
             e.kill()
     time.sleep(3)
     file_list = [
-        "C:\\ProgramData\\Riot Games\\machine.cfg",  # ?
         "C:\\Riot Games\\League of Legends\\debug.log",
-        "C:\\Riot Games\\Riot Client\\UX\\natives_blob.bin",
-        "C:\\Riot Games\\Riot Client\\UX\\snapshot_blob.bin",
-        "C:\\Riot Games\\Riot Client\\UX\\v8_context_snapshot.bin",
-        "C:\\Riot Games\\Riot Client\\UX\\icudtl.dat",
     ]
     dir_list = [
         "C:\\ProgramData\\Riot Games",
