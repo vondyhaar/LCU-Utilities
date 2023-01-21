@@ -26,7 +26,7 @@ reveal_tab = [
     [
         sg.ButtonMenu(
             "Search",
-            [["OPGG", "Porofessor", "U.GG"], ["OPGG", "Porofessor", "U.GG"]],
+            [["OPGG", "Porofessor", "U.GG", "XDX.GG"], ["OPGG", "Porofessor", "U.GG", "XDX.GG"]],
             key="-search-",
             font="System",
         ),
@@ -34,6 +34,9 @@ reveal_tab = [
     ],
 ]
 
+last_boosted = aram.get_last_use()
+if last_boosted is None:
+    last_boosted = 0
 aram_tab = [
     [sg.Text("State:", font=("System"), background_color="gray11", text_color="gray97")],
     [
@@ -196,6 +199,8 @@ window.BringToFront()
 while True:
     event, values = window.read()
     match event:
+
+        # Reveal tab ===========================================================
         case "-search-":
             participants = reveal.get_names()
             reveal.search(values["-search-"])
@@ -211,8 +216,10 @@ while True:
                             sg.Stretch(background_color="gray11"),
                         ],
                         [
+                            sg.Stretch(background_color="gray11"),
                             sg.Button("No", s=12, button_color=("gray97", "gray8"), font="System"),
                             sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
+                            sg.Stretch(background_color="gray11"),
                         ],
                     ],
                     modal=True,
@@ -221,15 +228,23 @@ while True:
                 ).read(close=True)
                 if event == "Yes":
                     reveal.dodge()
+
+        # Boost tab ===========================================================
         case "-boost-":
             r = aram.boost()
-            window["-state-"].update(r)
-            if r == "Expired":
-                window["-state-"].update(aram.get_jwt())
+            match r:
+                case 1:
+                    last_boosted = time.time()
+                case 2:
+                    window["-state-"].update("Rp value above 95")
+                case 3:
+                    window["-state-"].update(aram.get_jwt())
+                case 4:
+                    window["-state-"].update("Not in champ select")
         case "-jwt-":
             window["-state-"].update(aram.get_jwt())
 
-        # Refund tab
+        # Refund tab ==========================================================
         case "-transactions-":
             info = transactions.get(values[event])
             info = "{}{}\n{} {}\n{}".format(
@@ -242,6 +257,32 @@ while True:
             window["-info-"].update(info)
             pass
         case "-refund-":
+            if (time.time() - last_boosted) <= 3600:
+                event, v = sg.Window(
+                    f"Confirm refund?",
+                    [
+                        [
+                            sg.Stretch(background_color="gray11"),
+                            sg.Text(
+                                "You WILL lose at least 95 RP! Continue?",
+                                font="System",
+                                background_color="gray11",
+                            ),
+                            sg.Stretch(background_color="gray11"),
+                        ],
+                        [
+                            sg.Stretch(background_color="gray11"),
+                            sg.Button("No", s=12, button_color=("gray97", "gray8"), font="System"),
+                            sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
+                            sg.Stretch(background_color="gray11"),
+                        ],
+                    ],
+                    modal=True,
+                    background_color="gray11",
+                    icon="utils\\eye.ico",
+                ).read(close=True)
+                if event == "No":
+                    continue
             t = refund.get_transaction(values["-transactions-"])
             r = refund.refund(t.get("transactionId"))
             if r == True:
@@ -259,7 +300,7 @@ while True:
         case "-unfreeze-":
             window["-refresh-"].update(disabled=False)
 
-        # Rename tab
+        # Rename tab ==========================================================
         case "-check-":
             name = values["-name-"]
             r = rename.check_name(name)
@@ -284,8 +325,10 @@ while True:
                         sg.Stretch(background_color="gray11"),
                     ],
                     [
+                        sg.Stretch(background_color="gray11"),
                         sg.Button("No", s=12, button_color=("gray97", "gray8"), font="System"),
                         sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
+                        sg.Stretch(background_color="gray11"),
                     ],
                 ],
                 modal=True,
@@ -295,33 +338,6 @@ while True:
             if event == "Yes":
                 r = rename.change_name(name)
                 window["-nameinfo-"].update(r)
-        case "-removetokens-":
-            misc.remove_tokens()
-        case "-changebg-":
-            misc.change_background(values["-id-"])
-        case "-cleaner-":
-            event, v = sg.Window(
-                f"Confirm cleaner",
-                [
-                    [
-                        sg.Stretch(background_color="gray11"),
-                        sg.Text(
-                            "This will close all League processes! Continue?", font="System", background_color="gray11"
-                        ),
-                        sg.Stretch(background_color="gray11"),
-                    ],
-                    [
-                        sg.Button("No", s=12, button_color=("gray97", "gray8"), font="System"),
-                        sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
-                    ],
-                ],
-                modal=True,
-                background_color="gray11",
-                icon="utils\\eye.ico",
-            ).read(close=True)
-            if event == "Yes":
-                misc.cleaner()
-                break
         case "-snipe-":
             name = values["-name-"]
             r = rename.check_name(name)
@@ -339,8 +355,10 @@ while True:
                             sg.Stretch(background_color="gray11"),
                         ],
                         [
+                            sg.Stretch(background_color="gray11"),
                             sg.Button("No", s=12, button_color=("gray97", "gray8"), font="System"),
                             sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
+                            sg.Stretch(background_color="gray11"),
                         ],
                     ],
                     modal=True,
@@ -368,6 +386,37 @@ while True:
             window["-name-"].update(disabled=False)
             window["-check-"].update(disabled=False)
             window.BringToFront()
+
+        # Misc tab ============================================================
+        case "-removetokens-":
+            misc.remove_tokens()
+        case "-changebg-":
+            misc.change_background(values["-id-"])
+        case "-cleaner-":
+            event, v = sg.Window(
+                f"Confirm cleaner",
+                [
+                    [
+                        sg.Stretch(background_color="gray11"),
+                        sg.Text(
+                            "This will close all League processes! Continue?", font="System", background_color="gray11"
+                        ),
+                        sg.Stretch(background_color="gray11"),
+                    ],
+                    [
+                        sg.Stretch(background_color="gray11"),
+                        sg.Button("No", s=12, button_color=("gray97", "gray8"), font="System"),
+                        sg.Button("Yes", s=12, button_color=("gray97", "#731a1a"), font="System"),
+                        sg.Stretch(background_color="gray11"),
+                    ],
+                ],
+                modal=True,
+                background_color="gray11",
+                icon="utils\\eye.ico",
+            ).read(close=True)
+            if event == "Yes":
+                misc.cleaner()
+                break
         case "-ux-":
             if ux:  # /riotclient/ux-state ?
                 misc.kill_ux()
@@ -379,7 +428,7 @@ while True:
                 window["-ux-"].update("Kill UX")
         case sg.WIN_CLOSED:
             if not ux:
-                misc.kill_ux()
+                misc.restore_ux()
             break
         case "-repo-":
             webbrowser.open("https://github.com/vondyhaar/LCU-Utilities")

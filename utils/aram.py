@@ -1,5 +1,6 @@
 # utils/aram.py
 
+from enum import Enum
 from apis import *
 import json
 import time
@@ -10,26 +11,28 @@ class AramBoost:
     def __init__(self) -> None:
         self.lcu_api = LcuApi()
         self.data = {}
+        self.get_jwt()
         try:
             with open("jwt.json") as f:
                 self.data = json.load(f)
+                self.last_use = self.data.get(self.puuid).get("lastUse")
         except FileNotFoundError:
             with open("jwt.json", "w") as f:
                 json.dump(self.data, f)
 
-    def get_jwt(self) -> None:
+    def get_jwt(self) -> str:
         self.jwt: str = self.lcu_api.request("GET", "/lol-inventory/v1/signedWallet/RP").json()["RP"]
         payload = self.jwt.split(".")[1]
         payload += "=" * (-len(payload) % 4)
         payload = base64.b64decode(payload).decode("ascii")
         payload = json.loads(payload)
         rp = payload["balances"]["RP"]
-        puuid = payload["sub"]
+        self.puuid = payload["sub"]
         if rp >= 95:
             self.exp = payload["exp"]
             self.data.update(
                 {
-                    puuid: {
+                    self.puuid: {
                         "jwt": self.jwt,
                         "exp": self.exp,
                     }
@@ -41,7 +44,7 @@ class AramBoost:
         else:
             with open("jwt.json") as f:
                 data: dict = json.load(f)
-            user = data.get(puuid)
+            user = data.get(self.puuid)
             if user is None:
                 return "No JWT value for this user!"
             if time.time() > user["exp"]:
@@ -50,21 +53,33 @@ class AramBoost:
             self.exp = user["exp"]
             return "Successful fallback to previous JWT value"
 
-    def boost(self) -> None:
+    def get_last_use(self) -> float:
+        return int(self.last_use)
+
+    def boost(self) -> int:
         r = self.lcu_api.request("GET", "/lol-gameflow/v1/gameflow-phase").json()
         if r != "ChampSelect":
-            return
+            return 4
         if time.time() > self.exp:
-            return "Expired"
+            return 3
         rp = self.lcu_api.request("GET", "/lol-store/v1/wallet").json()["rp"]
         if rp >= 95:
-            return
+            return 2
         r = self.lcu_api.request(
             "POST",
             f'/lol-login/v1/session/invoke?destination=lcdsServiceProxy&method=call&args=["","teambuilder-draft","activateBattleBoostV1","{{\\"signedWalletJwt\\":\\"{self.jwt}\\"}}"]',
         )
+        self.last_use = time.time()
+        with open("jwt.json", "r") as f:
+            data = json.load(f)
+            self.last_use = time.time()
+            data[self.puuid].update({"lastUse": self.last_use})
+            with open("jwt.json", "w") as w:
+                json.dump(data, w, indent=4)
+        return 1
 
 
 __instance = AramBoost()
 get_jwt = __instance.get_jwt
+get_last_use = __instance.get_last_use
 boost = __instance.boost
