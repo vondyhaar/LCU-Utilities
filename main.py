@@ -1,5 +1,7 @@
 # main.py
 
+import ast
+import asyncio
 import sys
 import time
 import webbrowser
@@ -7,7 +9,8 @@ import webbrowser
 sys.path.insert(0, ".\\utils")
 
 import PySimpleGUI as sg
-import aram, reveal, refund, rename, misc
+import aram, reveal, refund, rename, misc, wss
+
 
 reveal_tab = [
     [sg.Text("Current team:", font=("System"), background_color="gray11", text_color="gray97")],
@@ -52,8 +55,8 @@ aram_tab = [
         )
     ],
     [
-        sg.Button("Boost", enable_events=True, key="-boost-", font="System"),
         sg.Button("Refresh JWT", enable_events=True, key="-jwt-", font="System", tooltip="Only if RP >= 95"),
+        sg.Button("Boost", enable_events=True, key="-boost-", font="System"),
     ],
 ]
 
@@ -196,6 +199,8 @@ window["-name-"].widget["disabledbackground"] = "gray8"
 window.BringToFront()
 
 
+window.perform_long_operation(lambda: asyncio.run(wss.start(window)), "")
+
 while True:
     event, values = window.read()
     match event:
@@ -203,8 +208,7 @@ while True:
         # Reveal tab ===========================================================
         case "-search-":
             participants = reveal.get_names()
-            reveal.search(values["-search-"])
-            window["-chat-"].update(participants)
+            reveal.search(values["-search-"], wss.participants)
         case "-dodge-":
             if reveal.match_phase("ChampSelect"):
                 event, v = sg.Window(
@@ -246,18 +250,17 @@ while True:
 
         # Refund tab ==========================================================
         case "-transactions-":
-            info = transactions.get(values[event])
+            item = transactions.get(values[event])
             info = "{}{}\n{} {}\n{}".format(
-                "WILL USE TOKEN!\n" if info.get("requiresToken") != False else "",
-                info.get("inventoryType"),
-                info.get("amountSpent"),
-                info.get("currencyType"),
-                info.get("datePurchased"),
+                "WILL USE TOKEN!\n" if item.get("requiresToken") != False else "",
+                item.get("inventoryType"),
+                item.get("amountSpent"),
+                item.get("currencyType"),
+                item.get("datePurchased"),
             )
             window["-info-"].update(info)
-            pass
         case "-refund-":
-            if (time.time() - last_boosted) <= 3600:
+            if item.get("currencyType") == "RP" and (time.time() - last_boosted) <= 7200:
                 event, v = sg.Window(
                     f"Confirm refund?",
                     [
