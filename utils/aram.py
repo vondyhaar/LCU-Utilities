@@ -15,7 +15,8 @@ class AramBoost:
         try:
             with open("jwt.json") as f:
                 self.data = json.load(f)
-                self.last_use = self.data.get(self.puuid).get("lastUse")
+                from_file = self.data.get(self.puuid).get("lastUse")
+                self.last_use = 0 if (from_file is None) else from_file
         except FileNotFoundError:
             with open("jwt.json", "w") as f:
                 json.dump(self.data, f)
@@ -57,9 +58,6 @@ class AramBoost:
         return int(self.last_use)
 
     def boost(self) -> int:
-        r = self.lcu_api.request("GET", "/lol-gameflow/v1/gameflow-phase").json()
-        if r != "ChampSelect":
-            return 4
         if time.time() > self.exp:
             return 3
         rp = self.lcu_api.request("GET", "/lol-store/v1/wallet").json()["rp"]
