@@ -34,9 +34,8 @@ class RevealNames:
             participants.append(e["name"])
         return participants if participants else "No players found!"
 
-    def search(self, option) -> None:
-        participants = self.get_names()
-        if isinstance(participants, str) or len(participants) == 1:
+    def search(self, option, participants) -> None:
+        if isinstance(participants, str):
             return
         match option:
             case "OPGG":
