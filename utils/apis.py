@@ -1,11 +1,31 @@
 # utils/apis.py
 
+from os import path
 import urllib3
 from requests.auth import HTTPBasicAuth
 import psutil
 import requests
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+def get_args_lockfile():
+    LEAGUE_PATH = "C:\\Riot Games\\League of Legends"
+    RIOT_CLIENT_PATH = path.expandvars("%LOCALAPPDATA%\\Riot Games\\Riot Client\\Config")
+
+    process_args = {}
+
+    with open(f"{LEAGUE_PATH}\\lockfile") as f:
+        args = f.read().split(":")
+        process_args.update({"app-port": args[2]})
+        process_args.update({"remoting-auth-token": args[3]})
+
+    with open(f"{RIOT_CLIENT_PATH}\\lockfile") as f:
+        args = f.read().split(":")
+        process_args.update({"riotclient-app-port": args[2]})
+        process_args.update({"riotclient-auth-token": args[3]})
+
+    return process_args
 
 
 def get_args():
@@ -48,7 +68,6 @@ class RiotClientApi:
 
 
 class LcuApi:
-    region = process_args.get("region")
     port = process_args.get("app-port")
     auth = HTTPBasicAuth("riot", process_args.get("remoting-auth-token"))
 
@@ -66,7 +85,7 @@ class LcuApi:
 class StorefrontApi:
     lcu_api = LcuApi()
     token = lcu_api.request("GET", "/lol-login/v1/session").json()["idToken"]
-    region = lcu_api.region
+    url = lcu_api.request("GET", "/lol-store/v1/getStoreUrl").json()
 
     def __new__(cls):
         if not hasattr(cls, "instance"):
@@ -76,7 +95,7 @@ class StorefrontApi:
     def request(self, method, endpoint, json=None):
         return requests.request(
             method,
-            f"https://{self.region}.store.leagueoflegends.com{endpoint}",
+            f"{self.url}{endpoint}",
             json=json,
             headers={"Authorization": f"Bearer {self.token}"},
         )
