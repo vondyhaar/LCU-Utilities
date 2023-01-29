@@ -72,6 +72,7 @@ class LcuApi:
     auth = HTTPBasicAuth("riot", process_args.get("remoting-auth-token"))
 
     def __new__(cls):
+        cls.region = cls.request(cls, "GET", "/riotclient/get_region_locale").json().get("webRegion")
         if not hasattr(cls, "instance"):
             cls.instance = super(__class__, cls).__new__(cls)
         return cls.instance
@@ -80,7 +81,6 @@ class LcuApi:
         return requests.request(
             method, f"https://127.0.0.1:{self.port}{endpoint}", verify=False, auth=self.auth, json=json
         )
-
 
 class StorefrontApi:
     lcu_api = LcuApi()
