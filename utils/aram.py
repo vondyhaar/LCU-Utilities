@@ -15,7 +15,7 @@ class AramBoost:
         try:
             with open("jwt.json") as f:
                 self.data = json.load(f)
-                from_file = self.data.get(self.puuid).get("lastUse")
+                from_file = self.data.get(self.puuid).get("lastUse") if self.data.get(self.puuid) != None else None
                 self.last_use = 0 if (from_file is None) else from_file
         except FileNotFoundError:
             with open("jwt.json", "w") as f:
