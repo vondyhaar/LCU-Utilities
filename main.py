@@ -1,6 +1,5 @@
 # main.py
 
-import ast
 import asyncio
 import sys
 import time
@@ -60,6 +59,7 @@ aram_tab = [
     ],
 ]
 
+f=[]
 try:
     transactions = refund.get_transactions()
     f = list(transactions.keys())

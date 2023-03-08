@@ -1,6 +1,7 @@
 import json
 import asyncio
 import aiohttp
+import aram
 
 from collections import defaultdict
 from apis import LcuApi, RiotClientApi
@@ -56,7 +57,8 @@ class LcuWebsocket:
     async def start(cls):
         self = LcuWebsocket()
         self.ws_session = aiohttp.ClientSession(
-            auth=aiohttp.BasicAuth("riot", self._auth_token), headers= {"Content-Type": "application/json", "Accept": "application/json"}
+            auth=aiohttp.BasicAuth("riot", self._auth_token),
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
         )
         self.ws_client = await self.ws_session.ws_connect(f"wss://127.0.0.1:{self._port}", ssl=False)
 
@@ -107,7 +109,7 @@ class LcuWebsocket:
 
         self.ws_subscriptions[event].append(subscription)
         return subscription
-        
+
 
 class RiotClientWebsocket:
     _port = process_args.get("riotclient-app-port")
@@ -172,22 +174,29 @@ class RiotClientWebsocket:
 
 
 async def start(win):
-    global window
+    global window, lcu_api
     window = win
+
     lcu_api = LcuApi()
-    await gameflow_handler({"data": lcu_api.request("GET", "/lol-gameflow/v1/gameflow-phase").json()})
     riot_websocket = await RiotClientWebsocket.start()
     lcu_websocket = await LcuWebsocket.start()
+
+    await gameflow_handler({"data": lcu_api.request("GET", "/lol-gameflow/v1/gameflow-phase").json()})
     await lcu_websocket.subscribe("OnJsonApiEvent_lol-gameflow_v1_gameflow-phase", gameflow_handler)
-    await lcu_websocket.subscribe("OnJsonApiEvent_lol-champions_v1_inventories", wallet_handler)
     (await riot_websocket.subscribe("OnJsonApiEvent_chat_v5_participants")).filter_endpoint(
         "/chat/v5/participants/champ-select", participants_handler
     )
+
+    window.perform_long_operation(lambda: asyncio.run(rp()), "")
+
     while True:
         await asyncio.sleep(100)
 
+
 participants = []
 cid = ""
+
+
 async def participants_handler(data):
     global participants, cid
     if data.get("eventType") != "Update":
@@ -201,15 +210,28 @@ async def participants_handler(data):
         participants.append(e.get("name"))
     window["-chat-"].update(participants)
 
+
 async def gameflow_handler(data):
     data = data.get("data")
     match data:
         case "ChampSelect":
             window["-dodge-"].update(disabled=False)
+            r = lcu_api.request("GET", "/lol-gameflow/v1/session")
+            if r.status_code != 200 or r.json().get("gameData").get("queue").get("gameMode") == "ARAM":
+                pass
             window["-boost-"].update(disabled=False)
         case _:
             window["-dodge-"].update(disabled=True)
             window["-boost-"].update(disabled=True)
 
-async def wallet_handler(data):
-    pass
+
+async def rp():
+    done = False
+    while True:
+        rp = lcu_api.request("GET", '/lol-inventory/v1/wallet?currencyTypes=["RP"]').json()["RP"]
+        if rp >= 95 and not done:
+            window["-state-"].update(aram.get_jwt())
+            done = True
+        else:
+            done = False
+        await asyncio.sleep(5)
